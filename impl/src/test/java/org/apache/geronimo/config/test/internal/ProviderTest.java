@@ -16,7 +16,9 @@
  */
 package org.apache.geronimo.config.test.internal;
 
+import javax.enterprise.context.Dependent;
 import javax.enterprise.context.RequestScoped;
+import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -38,7 +40,7 @@ public class ProviderTest extends Arquillian {
     public static WebArchive deploy() {
         JavaArchive testJar = ShrinkWrap
                 .create(JavaArchive.class, "configProviderTest.jar")
-                .addClasses(ProviderTest.class, SomeBean.class)
+                .addClasses(ProviderTest.class, SomeBean.class, StringProducer.class)
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
                 .as(JavaArchive.class);
 
@@ -60,6 +62,8 @@ public class ProviderTest extends Arquillian {
         System.setProperty(SOME_KEY, "otherval");
         myconfig = someBean.getMyconfig();
         Assert.assertEquals(myconfig, "otherval");
+
+        Assert.assertEquals(someBean.getMyString(), "hello");
     }
 
 
@@ -70,8 +74,29 @@ public class ProviderTest extends Arquillian {
         @ConfigProperty(name=SOME_KEY)
         private Provider<String> myconfig;
 
+        @Inject
+        @Juicy
+        private Provider<String> myString;
+
         public String getMyconfig() {
             return myconfig.get();
         }
+
+        public String getMyString() {
+            return myString.get();
+        }
     }
+
+    @Dependent
+    public static class StringProducer {
+
+        @Dependent
+        @Juicy
+        @Produces
+        String produceJuicyString() {
+            return "hello";
+        }
+
+    }
+
 }
